@@ -1,0 +1,92 @@
+:root {
+  /* Color Palette - Warm Cream Minimal */
+  --bg-main: #F7F4EE;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #EDE9E0;
+  --bg-hover: #E5E0D5;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FCFBF9;
+
+  /* Borders */
+  --border-light: #E6E1D6;
+  --border-medium: #D5CEC2;
+  --border-focus: #262420;
+
+  /* Typography Colors */
+  --text-primary: #24221E;
+  --text-secondary: #5E5A52;
+  --text-muted: #8F897D;
+  --text-inverse: #FFFFFF;
+
+  /* Accent - Atelier Forest & Deep Navy */
+  --accent-primary: #1A3636;
+  --accent-primary-hover: #122525;
+  --accent-light: #E8EFE9;
+  --accent-warm: #C86D51;
+  --accent-warm-light: #FDF3EF;
+  --accent-blue: #2B4C7E;
+  --accent-blue-light: #EEF3FA;
+
+  /* Status Colors */
+  --badge-math-bg: #EBF3FE;
+  --badge-math-text: #1E429F;
+  --badge-science-bg: #EDFDF5;
+  --badge-science-text: #046C4E;
+  --badge-coding-bg: #F5F3FF;
+  --badge-coding-text: #5B21B6;
+  --badge-lang-bg: #FEF3F2;
+  --badge-lang-text: #B42318;
+  --badge-tool-bg: #FEF7C3;
+  --badge-tool-text: #713F12;
+  --badge-creative-bg: #FDF2F8;
+  --badge-creative-text: #9D174D;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.12);
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  /* Font Families */
+  --font-sans: 'Pretendard', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  --font-serif: 'Newsreader', Georgia, 'Batang', serif;
+  --font-mono: 'JetBrains Mono', Consolas, Monaco, monospace;
+
+  /* Layout */
+  --max-width: 1200px;
+  --nav-height: 64px;
+}
+
+[data-theme='dark'] {
+  --bg-main: #131416;
+  --bg-surface: #1A1C1E;
+  --bg-subtle: #222529;
+  --bg-hover: #2B2F34;
+  --bg-card: #1A1C1E;
+  --bg-card-hover: #202327;
+
+  --border-light: #2A2D32;
+  --border-medium: #3A3E45;
+  --border-focus: #ECECE8;
+
+  --text-primary: #F3F3F1;
+  --text-secondary: #A8A8A2;
+  --text-muted: #6E6E69;
+  --text-inverse: #131416;
+
+  --accent-primary: #528078;
+  --accent-primary-hover: #639990;
+  --accent-light: #1A2825;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.7);
+}
