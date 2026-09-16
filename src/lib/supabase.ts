@@ -2,8 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { EducationalApp, CategoryMeta } from '../types';
 import { INITIAL_APPS, CATEGORIES } from './mockData';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL || 'https://xngegsjkwawakzwldkfv.supabase.co';
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_RLKtQd-Apr_iS4bB1Kn6GA_5WZu5kDg';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl &&
