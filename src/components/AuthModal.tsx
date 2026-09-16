@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, KeyRound } from 'lucide-react';
 import { GithubIcon } from './GithubIcon';
+import { GoogleIcon } from './GoogleIcon';
 import { supabase, isSupabaseConfigured, isUserAdmin } from '../lib/supabase';
 import type { UserProfile } from '../types';
 
@@ -85,6 +86,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // Google OAuth 로그인
+  const handleGoogleLogin = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      setErrorMsg('데이터베이스(Supabase)가 아직 연결되지 않았습니다.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Google 로그인 중 오류가 발생했습니다.');
+    }
+  };
+
   // GitHub OAuth 로그인
   const handleGithubLogin = async () => {
     if (!isSupabaseConfigured || !supabase) {
@@ -127,15 +148,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             로그인하면 관심 있는 교육용 웹앱을 즐겨찾기에 담고, 관리자는 새로운 앱을 등록 및 수정할 수 있습니다.
           </p>
 
-          {/* Social Login Button */}
-          <button
-            type="button"
-            className="btn btn-secondary social-auth-btn"
-            onClick={handleGithubLogin}
-          >
-            <GithubIcon size={18} />
-            <span>GitHub 계정으로 계속하기</span>
-          </button>
+          {/* Social Login Buttons */}
+          <div className="social-auth-group">
+            <button
+              type="button"
+              className="btn btn-secondary social-auth-btn google-btn"
+              onClick={handleGoogleLogin}
+            >
+              <GoogleIcon size={18} />
+              <span>Google 계정으로 계속하기</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary social-auth-btn github-btn"
+              onClick={handleGithubLogin}
+            >
+              <GithubIcon size={18} />
+              <span>GitHub 계정으로 계속하기</span>
+            </button>
+          </div>
 
           <div className="auth-divider">
             <span>또는 이메일로 계속하기</span>
@@ -151,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <input
                 id="email"
                 type="email"
-                placeholder="baekyungrock@gmail.com"
+                placeholder="baekyungrock1994@gmail.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -242,14 +274,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           margin-bottom: 1.25rem;
         }
 
+        .social-auth-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+        }
+
         .social-auth-btn {
           width: 100%;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 0.5rem;
-          padding: 0.7rem 1rem;
+          gap: 0.65rem;
+          padding: 0.72rem 1rem;
           font-weight: 600;
+          font-size: 0.9rem;
+          border-radius: var(--radius-sm);
+          transition: all 0.2s ease;
+        }
+
+        .social-auth-btn.google-btn {
+          background-color: #FFFFFF;
+          border: 1px solid #DADCE0;
+          color: #3C4043;
+        }
+
+        .social-auth-btn.google-btn:hover {
+          background-color: #F8F9FA;
+          border-color: #C6C8CC;
+          box-shadow: 0 1px 3px rgba(60,64,67,0.15);
         }
 
         .auth-divider {
