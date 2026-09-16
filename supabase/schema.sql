@@ -60,8 +60,8 @@ drop policy if exists "선생님만 카테고리를 관리할 수 있습니다."
 create policy "선생님만 카테고리를 관리할 수 있습니다."
   on public.app_categories for all
   to authenticated
-  using (auth.jwt() ->> 'email' = 'baekyungrock1994@gmail.com')
-  with check (auth.jwt() ->> 'email' = 'baekyungrock1994@gmail.com');
+  using (auth.jwt() ->> 'email' in ('baekyungrock@gmail.com', 'baekyungrock1994@gmail.com'))
+  with check (auth.jwt() ->> 'email' in ('baekyungrock@gmail.com', 'baekyungrock1994@gmail.com'));
 
 -- 4. RLS 정책: 누구나 웹앱 목록을 조회할 수 있음 (Public Read)
 drop policy if exists "누구나 교육용 앱을 조회할 수 있습니다." on public.educational_apps;
@@ -75,21 +75,21 @@ drop policy if exists "선생님만 앱을 추가할 수 있습니다." on publi
 create policy "선생님만 앱을 추가할 수 있습니다."
   on public.educational_apps for insert
   to authenticated
-  with check (auth.jwt() ->> 'email' = 'baekyungrock1994@gmail.com');
+  with check (auth.jwt() ->> 'email' in ('baekyungrock@gmail.com', 'baekyungrock1994@gmail.com'));
 
 drop policy if exists "인증된 사용자는 앱을 수정할 수 있습니다." on public.educational_apps;
 drop policy if exists "선생님만 앱을 수정할 수 있습니다." on public.educational_apps;
 create policy "선생님만 앱을 수정할 수 있습니다."
   on public.educational_apps for update
   to authenticated
-  using (auth.jwt() ->> 'email' = 'baekyungrock1994@gmail.com');
+  using (auth.jwt() ->> 'email' in ('baekyungrock@gmail.com', 'baekyungrock1994@gmail.com'));
 
 drop policy if exists "인증된 사용자는 앱을 삭제할 수 있습니다." on public.educational_apps;
 drop policy if exists "선생님만 앱을 삭제할 수 있습니다." on public.educational_apps;
 create policy "선생님만 앱을 삭제할 수 있습니다."
   on public.educational_apps for delete
   to authenticated
-  using (auth.jwt() ->> 'email' = 'baekyungrock1994@gmail.com');
+  using (auth.jwt() ->> 'email' in ('baekyungrock@gmail.com', 'baekyungrock1994@gmail.com'));
 
 -- 6. RLS 정책: 북마크는 본인 것만 조회/등록/삭제 가능
 drop policy if exists "사용자는 자신의 북마크만 조회할 수 있습니다." on public.user_bookmarks;

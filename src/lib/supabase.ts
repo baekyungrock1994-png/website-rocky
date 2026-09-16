@@ -15,6 +15,21 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
+// 관리자 이메일 목록 (사용자 지정 이메일 및 환경변수)
+export const ADMIN_EMAILS: string[] = [
+  'baekyungrock@gmail.com',
+  'baekyungrock1994@gmail.com',
+  ...(import.meta.env.VITE_ADMIN_EMAIL
+    ? import.meta.env.VITE_ADMIN_EMAIL.split(',').map((e: string) => e.trim().toLowerCase())
+    : [])
+];
+
+export const isUserAdmin = (email?: string | null): boolean => {
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  return ADMIN_EMAILS.some(admin => admin.toLowerCase() === normalized);
+};
+
 const STORAGE_KEY = 'rocky_custom_apps_v1';
 const BOOKMARKS_KEY = 'rocky_user_bookmarks_v1';
 const CATEGORIES_KEY = 'rocky_custom_categories_v1';

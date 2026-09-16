@@ -19,7 +19,8 @@ import {
   getCustomCategories,
   updateCategoriesList,
   supabase,
-  isSupabaseConfigured
+  isSupabaseConfigured,
+  isUserAdmin
 } from './lib/supabase';
 import { CATEGORIES } from './lib/mockData';
 import { Plus, Compass } from 'lucide-react';
@@ -73,11 +74,10 @@ export const App: React.FC = () => {
     if (isSupabaseConfigured && supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || '';
           const profile: UserProfile = {
             id: session.user.id,
             email: session.user.email || '',
-            isAdmin: Boolean(adminEmail && session.user.email === adminEmail)
+            isAdmin: isUserAdmin(session.user.email)
           };
           setUser(profile);
           localStorage.setItem('rocky_current_user', JSON.stringify(profile));
@@ -86,11 +86,10 @@ export const App: React.FC = () => {
 
       const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
-          const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || '';
           const profile: UserProfile = {
             id: session.user.id,
             email: session.user.email || '',
-            isAdmin: Boolean(adminEmail && session.user.email === adminEmail)
+            isAdmin: isUserAdmin(session.user.email)
           };
           setUser(profile);
           localStorage.setItem('rocky_current_user', JSON.stringify(profile));
