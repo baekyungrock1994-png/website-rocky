@@ -11,12 +11,14 @@ interface AppEditModalProps {
 }
 
 const PRESET_THUMBNAILS = [
+  { label: '도덕·사회', url: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80' },
+  { label: '인문·교양', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=800&q=80' },
+  { label: '사회·역사', url: 'https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=800&q=80' },
   { label: '수학·기하', url: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=800&q=80' },
+  { label: '과학·실험', url: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80' },
   { label: '코딩·화면', url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80' },
-  { label: '물리·실험', url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80' },
-  { label: '화학·원소', url: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80' },
-  { label: '언어·도서', url: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=800&q=80' },
-  { label: '교실·활동', url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80' }
+  { label: '예술·창의', url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80' },
+  { label: '교실·도구', url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80' }
 ];
 
 export const AppEditModal: React.FC<AppEditModalProps> = ({
@@ -62,7 +64,7 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
       setAppUrl('');
       setGithubUrl('');
       setThumbnailUrl(PRESET_THUMBNAILS[0].url);
-      setTagsInput('수학, 시각화, 개념');
+      setTagsInput('도덕, 수업도구, 인터랙티브');
       setIsFeatured(false);
     }
   }, [editTarget, isOpen, categories]);
@@ -240,7 +242,7 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
               <label>검색 태그 (쉼표로 구분)</label>
               <input
                 type="text"
-                placeholder="기하, 이차함수, 시각화, 수학교과"
+                placeholder="도덕, 수업도구, 시각화, 탐구활동"
                 value={tagsInput}
                 onChange={e => setTagsInput(e.target.value)}
               />
