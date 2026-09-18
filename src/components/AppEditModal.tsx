@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Save, Check, Upload, Image as ImageIcon, Link as LinkIcon, Camera, Trash2 } from 'lucide-react';
 import type { EducationalApp, AppCategory, CategoryMeta } from '../types';
 
 interface AppEditModalProps {
@@ -21,6 +21,64 @@ const PRESET_THUMBNAILS = [
   { label: '교실·도구', url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80' }
 ];
 
+// 스크린샷 및 업로드 이미지 최적화 (Canvas 리사이징 + WebP/JPEG 압축)
+const processImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('이미지 파일(PNG, JPG, WebP 등)만 선택할 수 있습니다.'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 750;
+        let { width, height } = img;
+
+        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+          if (width / height > MAX_WIDTH / MAX_HEIGHT) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          } else {
+            width = Math.round((width * MAX_HEIGHT) / height);
+            height = MAX_HEIGHT;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(result);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        try {
+          const webpData = canvas.toDataURL('image/webp', 0.85);
+          if (webpData.startsWith('data:image/webp')) {
+            resolve(webpData);
+            return;
+          }
+        } catch {
+          // WebP 미지원 시 JPEG 대체
+        }
+
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => reject(new Error('이미지를 불러오는데 실패했습니다.'));
+      img.src = result;
+    };
+    reader.onerror = () => reject(new Error('파일을 읽는데 실패했습니다.'));
+    reader.readAsDataURL(file);
+  });
+};
+
 export const AppEditModal: React.FC<AppEditModalProps> = ({
   isOpen,
   onClose,
@@ -40,6 +98,59 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
   const [isFeatured, setIsFeatured] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // 썸네일 업로드 / 드래그 / 붙여넣기 상태
+  const [isDragging, setIsDragging] = useState(false);
+  const [processingImage, setProcessingImage] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 파일 처리 핸들러
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    try {
+      setProcessingImage(true);
+      const dataUrl = await processImageFile(file);
+      setThumbnailUrl(dataUrl);
+    } catch (err: any) {
+      alert(err.message || '이미지 처리에 실패했습니다.');
+    } finally {
+      setProcessingImage(false);
+    }
+  };
+
+  // 클립보드 이미지 붙여넣기 (Ctrl + V) 리스너
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith('image/')) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            try {
+              setProcessingImage(true);
+              const dataUrl = await processImageFile(file);
+              setThumbnailUrl(dataUrl);
+            } catch (err: any) {
+              alert(err.message || '붙여넣은 이미지 처리에 실패했습니다.');
+            } finally {
+              setProcessingImage(false);
+            }
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen]);
+
   useEffect(() => {
     const validCategories = categories.filter(c => c.id !== 'all');
     const defaultCatId = validCategories.length > 0 ? validCategories[0].id : 'math';
@@ -55,6 +166,7 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
       setThumbnailUrl(editTarget.thumbnailUrl);
       setTagsInput(editTarget.tags.join(', '));
       setIsFeatured(Boolean(editTarget.isFeatured));
+      setShowUrlInput(Boolean(editTarget.thumbnailUrl && !editTarget.thumbnailUrl.startsWith('data:')));
     } else {
       setTitle('');
       setSummary('');
@@ -66,6 +178,7 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
       setThumbnailUrl(PRESET_THUMBNAILS[0].url);
       setTagsInput('도덕, 수업도구, 인터랙티브');
       setIsFeatured(false);
+      setShowUrlInput(false);
     }
   }, [editTarget, isOpen, categories]);
 
@@ -74,6 +187,7 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !appUrl.trim()) return;
+
 
     const tags = tagsInput
       .split(',')
@@ -208,15 +322,114 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
               />
             </div>
 
-            {/* Thumbnail URL & Presets */}
+            {/* Thumbnail Upload & Presets */}
             <div className="form-group span-2">
-              <label>대표 이미지 URL</label>
-              <input
-                type="url"
-                placeholder="이미지 웹 주소(URL)를 입력하거나 아래 추천 프리셋을 클릭하세요."
-                value={thumbnailUrl}
-                onChange={e => setThumbnailUrl(e.target.value)}
-              />
+              <div className="thumbnail-header-row">
+                <label>대표 썸네일 이미지</label>
+                <button
+                  type="button"
+                  className="btn-text-toggle"
+                  onClick={() => setShowUrlInput(prev => !prev)}
+                >
+                  <LinkIcon size={12} />
+                  <span>{showUrlInput ? '직접 URL 입력 닫기' : '웹 URL 직접 입력'}</span>
+                </button>
+              </div>
+
+              {/* Drag & Drop / Upload / Preview Box */}
+              <div
+                className={`thumbnail-dropzone ${isDragging ? 'dragging' : ''}`}
+                onDragOver={e => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={e => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  handleFiles(e.dataTransfer.files);
+                }}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => handleFiles(e.target.files)}
+                />
+
+                {/* Left: Thumbnail Preview */}
+                <div className="thumbnail-preview-container">
+                  {thumbnailUrl ? (
+                    <div className="thumbnail-preview-wrapper">
+                      <img src={thumbnailUrl} alt="썸네일 미리보기" className="thumbnail-preview-img" />
+                      <div className="preview-overlay">
+                        <button
+                          type="button"
+                          className="btn-overlay-action"
+                          onClick={() => fileInputRef.current?.click()}
+                          title="다른 스크린샷/파일 선택"
+                        >
+                          <Upload size={13} />
+                          <span>변경</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-overlay-action danger"
+                          onClick={() => setThumbnailUrl('')}
+                          title="이미지 삭제"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="thumbnail-empty-placeholder"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImageIcon size={28} className="empty-icon" />
+                      <span className="empty-text">이미지 없음</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Actions & Paste guide */}
+                <div className="thumbnail-upload-actions">
+                  <div className="action-buttons-row">
+                    <button
+                      type="button"
+                      className="btn-upload-file"
+                      disabled={processingImage}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={14} />
+                      <span>{processingImage ? '이미지 최적화 중...' : '스크린샷 / 파일 선택'}</span>
+                    </button>
+                  </div>
+
+                  <div className="paste-hint-box">
+                    <div className="paste-hint-pill">
+                      <Camera size={13} />
+                      <span><b>[Ctrl + V]</b> 화면 캡쳐 후 바로 붙여넣기</span>
+                    </div>
+                    <span className="drop-hint-text">또는 이미지 파일을 여기로 드래그하세요</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Optional Direct URL Input */}
+              {showUrlInput && (
+                <div className="url-input-wrapper">
+                  <input
+                    type="url"
+                    placeholder="이미지 웹 주소(https://...)를 직접 입력하세요"
+                    value={thumbnailUrl}
+                    onChange={e => setThumbnailUrl(e.target.value)}
+                    className="direct-url-input"
+                  />
+                </div>
+              )}
 
               {/* Preset Clickers */}
               <div className="preset-row">
@@ -323,6 +536,204 @@ export const AppEditModal: React.FC<AppEditModalProps> = ({
           font-size: 0.82rem;
           font-weight: 600;
           color: var(--text-secondary);
+        }
+
+        .thumbnail-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .btn-text-toggle {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          background: none;
+          border: none;
+          padding: 0;
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          cursor: pointer;
+          transition: color 0.15s;
+        }
+
+        .btn-text-toggle:hover {
+          color: var(--accent-primary);
+        }
+
+        .thumbnail-dropzone {
+          display: flex;
+          align-items: center;
+          gap: 1.1rem;
+          padding: 0.85rem;
+          background-color: var(--bg-subtle);
+          border: 1.5px dashed var(--border-light);
+          border-radius: var(--radius-sm);
+          transition: all 0.2s ease;
+        }
+
+        .thumbnail-dropzone.dragging {
+          border-color: var(--accent-primary);
+          background-color: var(--accent-light);
+        }
+
+        .thumbnail-preview-container {
+          width: 145px;
+          height: 92px;
+          flex-shrink: 0;
+          border-radius: var(--radius-xs);
+          overflow: hidden;
+          background-color: var(--bg-card);
+          border: 1px solid var(--border-light);
+          position: relative;
+        }
+
+        .thumbnail-preview-wrapper {
+          width: 100%;
+          height: 100%;
+          position: relative;
+        }
+
+        .thumbnail-preview-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .preview-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.55);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.4rem;
+          opacity: 0;
+          transition: opacity 0.15s ease;
+        }
+
+        .thumbnail-preview-wrapper:hover .preview-overlay {
+          opacity: 1;
+        }
+
+        .btn-overlay-action {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.3rem 0.5rem;
+          font-size: 0.72rem;
+          font-weight: 600;
+          background: white;
+          color: #111;
+          border: none;
+          border-radius: var(--radius-xs);
+          cursor: pointer;
+          transition: transform 0.1s;
+        }
+
+        .btn-overlay-action:hover {
+          transform: scale(1.05);
+        }
+
+        .btn-overlay-action.danger {
+          background: #fee2e2;
+          color: #ef4444;
+        }
+
+        .thumbnail-empty-placeholder {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.35rem;
+          color: var(--text-muted);
+          cursor: pointer;
+        }
+
+        .empty-icon {
+          opacity: 0.6;
+        }
+
+        .empty-text {
+          font-size: 0.72rem;
+        }
+
+        .thumbnail-upload-actions {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.45rem;
+        }
+
+        .btn-upload-file {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          padding: 0.45rem 0.85rem;
+          background-color: var(--accent-primary);
+          color: #fff;
+          font-size: 0.8rem;
+          font-weight: 600;
+          border: none;
+          border-radius: var(--radius-xs);
+          cursor: pointer;
+          transition: opacity 0.15s;
+          width: fit-content;
+        }
+
+        .btn-upload-file:hover {
+          opacity: 0.9;
+        }
+
+        .btn-upload-file:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .paste-hint-box {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+        }
+
+        .paste-hint-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 0.72rem;
+          color: var(--accent-primary);
+          background-color: var(--accent-light);
+          padding: 0.2rem 0.5rem;
+          border-radius: 999px;
+          width: fit-content;
+        }
+
+        .drop-hint-text {
+          font-size: 0.7rem;
+          color: var(--text-muted);
+        }
+
+        .url-input-wrapper {
+          margin-top: 0.35rem;
+        }
+
+        .direct-url-input {
+          font-size: 0.8rem;
+          padding: 0.45rem 0.75rem;
+        }
+
+        @media (max-width: 520px) {
+          .thumbnail-dropzone {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .thumbnail-preview-container {
+            width: 100%;
+            height: 130px;
+          }
         }
 
         .preset-row {
