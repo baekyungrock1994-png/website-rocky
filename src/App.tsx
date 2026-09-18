@@ -20,16 +20,17 @@ import {
   updateCategoriesList,
   supabase,
   isSupabaseConfigured,
-  isUserAdmin
+  isUserAdmin,
+  getLocalApps,
+  getInitialCachedCategories
 } from './lib/supabase';
-import { CATEGORIES } from './lib/mockData';
 import { Plus, Compass } from 'lucide-react';
 
 export const App: React.FC = () => {
-  // Data & Auth state
-  const [apps, setApps] = useState<EducationalApp[]>([]);
-  const [categories, setCategories] = useState<CategoryMeta[]>(CATEGORIES);
-  const [loading, setLoading] = useState(true);
+  // Data & Auth state (캐시된 최신 상태를 즉시 렌더링하여 깜빡임 제거)
+  const [apps, setApps] = useState<EducationalApp[]>(getLocalApps);
+  const [categories, setCategories] = useState<CategoryMeta[]>(getInitialCachedCategories);
+  const [loading, setLoading] = useState<boolean>(() => getLocalApps().length === 0);
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('rocky_current_user');
     return saved ? JSON.parse(saved) : null;
@@ -52,7 +53,6 @@ export const App: React.FC = () => {
   // Load apps & bookmarks & categories
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
       try {
         const [appList, catList] = await Promise.all([
           getEducationalApps(),

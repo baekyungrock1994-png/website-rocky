@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { EducationalApp, CategoryMeta } from '../types';
-import { INITIAL_APPS, CATEGORIES } from './mockData';
+import { CATEGORIES } from './mockData';
 
 const supabaseUrl =
   import.meta.env.VITE_SUPABASE_URL || 'https://xngegsjkwawakzwldkfv.supabase.co';
@@ -35,20 +35,26 @@ export const isUserAdmin = (email?: string | null): boolean => {
 const STORAGE_KEY = 'rocky_custom_apps_v1';
 const BOOKMARKS_KEY = 'rocky_user_bookmarks_v1';
 const CATEGORIES_KEY = 'rocky_custom_categories_v1';
-
-// 로컬 스토리지 헬퍼 (Supabase 미연결 시 오프라인/체험용)
-function getLocalApps(): EducationalApp[] {
+// 로컬 스토리지 헬퍼 (Supabase 캐시 및 오프라인용)
+export function getLocalApps(): EducationalApp[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_APPS));
-      return INITIAL_APPS;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch (e) {
     console.error('Failed to read local apps:', e);
-    return INITIAL_APPS;
+    return [];
   }
+}
+
+export function getInitialCachedCategories(): CategoryMeta[] {
+  try {
+    const raw = localStorage.getItem(CATEGORIES_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to read cached categories:', e);
+  }
+  return CATEGORIES;
 }
 
 function saveLocalApps(apps: EducationalApp[]) {
@@ -66,8 +72,8 @@ export async function getEducationalApps(): Promise<EducationalApp[]> {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      if (data && data.length > 0) {
-        return data.map((item: any) => ({
+      if (data) {
+        const formatted: EducationalApp[] = data.map((item: any) => ({
           id: item.id,
           title: item.title,
           summary: item.summary,
@@ -83,6 +89,8 @@ export async function getEducationalApps(): Promise<EducationalApp[]> {
           createdAt: item.created_at,
           authorEmail: item.author_email || ''
         }));
+        saveLocalApps(formatted);
+        return formatted;
       }
     } catch (err) {
       console.warn('Supabase fetch failed, falling back to local dataset:', err);
